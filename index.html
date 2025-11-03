@@ -1,37 +1,119 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jeu de Course</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <title>Jeu avec image et personnage</title>
 </head>
-<body>
-    <div class="game-container">
-        <div class="controls">
-            <div class="score">Score: <span id="scoreDisplay">0</span></div>
-            <div class="speed-control">
-                <button class="speed-btn" onclick="decreaseSpeed()">-</button>
-                <span class="speed-display">Vitesse: <span id="speedDisplay">5</span></span>
-                <button class="speed-btn" onclick="increaseSpeed()">+</button>
-            </div>
-        </div>
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
-        <div class="instructions">
-            <p><strong>← →</strong> pour changer de ligne</p>
-            <p><strong>+/-</strong> pour ajuster la vitesse</p>
-        </div>
-    </div>
+<body onload="startGame()">
 
-    <div id="modal" class="modal">
-        <div id="modalContent" class="modal-content">
-            <h2 id="modalTitle"></h2>
-            <div class="modal-image" id="modalImage"></div>
-            <div class="final-score" id="finalScore"></div>
-            <button class="restart-btn" onclick="restartGame()">RESTART</button>
-        </div>
-    </div>
+<script>
+let myGameArea;
+let myGamePiece;
+let background;
+var myObstacle;
 
-    <script src="app.js"></script>
+function startGame() {
+  // Création de la zone de jeu
+  myGameArea = {
+    canvas: document.createElement("canvas"),
+    start: function() {
+      this.canvas.width = 1500;
+      this.canvas.height = 500;
+      this.context = this.canvas.getContext("2d");
+      document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+      this.interval = setInterval(updateGameArea, 20); // rafraîchit 50x/s
+    },
+    clear: function() {
+      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    }
+  };
+
+  myGameArea.start();
+
+  // Chargement du fond
+  background = new Image();
+  background.src = "11.jpg"; // ton image de fond
+
+  // Création du personnage
+  myGamePiece = new component(100, 100, "22.png", 50, 300, "image");
+  myObstacle = new component(40, 40, "green", 300, 120);
+}
+
+// Classe composant (pour image ou couleur)
+function component(width, height, colorOrImage, x, y, type) {
+  this.width = width;
+  this.height = height;
+  this.x = x;
+  this.y = y;
+  this.speedX = 0;
+  this.speedY = 0;
+  this.type = type;
+
+  if (this.type === "image") {
+    this.image = new Image();
+    this.image.src = colorOrImage;
+  } else {
+    this.color = colorOrImage;
+  }
+
+  this.update = function() {
+    const ctx = myGameArea.context;
+    if (this.type === "image") {
+      ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+    } else {
+      ctx.fillStyle = this.color;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+  };
+
+  this.newPos = function() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+  };
+}
+
+// Met à jour le canvas
+function updateGameArea() {
+  const ctx = myGameArea.context;
+  ctx.drawImage(background, 0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+  myGamePiece.newPos();
+  myGamePiece.update();
+  myObstacle.update();
+}
+
+// Fonctions de mouvement
+function moveup() {
+  myGamePiece.speedY = -2;
+}
+
+function movedown() {
+  myGamePiece.speedY = 2;
+}
+
+function moveright() {
+  myGamePiece.speedX = 2;
+}
+
+function moveleft() {
+  myGamePiece.speedX = -2;
+}
+
+// Arrêter le mouvement
+function clearmove() {
+  myGamePiece.speedX = 0;
+  myGamePiece.speedY = 0;
+}
+
+
+
+
+</script>
+
+<!-- Contrôles -->
+<button onmousedown="moveup()" onmouseup="clearmove()">UP</button>
+<button onmousedown="movedown()" onmouseup="clearmove()">DOWN</button>
+<button onmousedown="moveleft()" onmouseup="clearmove()">LEFT</button>
+<button onmousedown="moveright()" onmouseup="clearmove()">RIGHT</button>
+
 </body>
 </html>
