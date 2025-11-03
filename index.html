@@ -1,11 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Jeu de Course</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    
+    <div class="game-container">
+        <div class="controls">
+            <div class="score">Score: <span id="scoreDisplay">0</span></div>
+            <div class="speed-control">
+                <button class="speed-btn" onclick="decreaseSpeed()">-</button>
+                <span class="speed-display">Vitesse: <span id="speedDisplay">5</span></span>
+                <button class="speed-btn" onclick="increaseSpeed()">+</button>
+            </div>
+        </div>
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div class="instructions">
+            <p><strong>← →</strong> pour changer de ligne</p>
+            <p><strong>+/-</strong> pour ajuster la vitesse</p>
+        </div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div id="modalContent" class="modal-content">
+            <h2 id="modalTitle"></h2>
+            <div class="modal-image" id="modalImage"></div>
+            <div class="final-score" id="finalScore"></div>
+            <button class="restart-btn" onclick="restartGame()">RESTART</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
 </body>
 </html>
