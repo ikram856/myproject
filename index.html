@@ -3,6 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <title>Jeu avec image et personnage</title>
+  <style>
+    body {
+      text-align: center;
+      background-color: #f0f0f0;
+    }
+    canvas {
+      border: 2px solid black;
+      display: block;
+      margin: 20px auto;
+      background-size: cover;
+    }
+  </style>
 </head>
 <body onload="startGame()">
 
@@ -10,56 +22,72 @@
 let myGameArea;
 let myGamePiece;
 let background;
-var myObstacle;
+let myObstacles = [];
+let myScore;
 
 function startGame() {
-  // Création de la zone de jeu
   myGameArea = {
     canvas: document.createElement("canvas"),
     start: function() {
-      this.canvas.width = 1500;
+      this.canvas.width = 1000;
       this.canvas.height = 500;
       this.context = this.canvas.getContext("2d");
       document.body.insertBefore(this.canvas, document.body.childNodes[0]);
-      this.interval = setInterval(updateGameArea, 20); // rafraîchit 50x/s
+      this.frameNo = 0;
+      this.interval = setInterval(updateGameArea, 20);
     },
     clear: function() {
       this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    },
+    stop: function() {
+      clearInterval(this.interval);
+      alert("💥 Collision ! Jeu terminé !");
     }
   };
 
   myGameArea.start();
 
-  // Chargement du fond
   background = new Image();
   background.src = "11.jpg"; // ton image de fond
 
-  // Création du personnage
   myGamePiece = new component(100, 100, "22.png", 50, 300, "image");
-  myObstacle = new component(40, 40, "green", 300, 120);
+  myScore = new component("30px", "Consolas", "black", 20, 40, "text");
+
+  myObstacles.push(new component(90, 90, "44.png", 600, 250, "image"));
+  myObstacles.push(new component(90, 90, "44.png", 900, 250, "image"));
+  myObstacles.push(new component(90, 90, "44.png", 900, 100, "image"));
 }
 
-// Classe composant (pour image ou couleur)
-function component(width, height, colorOrImage, x, y, type) {
-  this.width = width;
-  this.height = height;
+// Classe composant
+function component(width, height, colorOrFont, x, y, type) {
+  this.type = type;
   this.x = x;
   this.y = y;
+  this.width = width;
+  this.height = height;
   this.speedX = 0;
   this.speedY = 0;
-  this.type = type;
 
-  if (this.type === "image") {
+  if (type === "image") {
     this.image = new Image();
-    this.image.src = colorOrImage;
+    this.image.src = colorOrFont;
+  } else if (type === "text") {
+    this.font = width; // largeur = taille du texte
+    this.fontFamily = height; // hauteur = police
+    this.color = colorOrFont;
+    this.text = "";
   } else {
-    this.color = colorOrImage;
+    this.color = colorOrFont;
   }
 
   this.update = function() {
     const ctx = myGameArea.context;
     if (this.type === "image") {
       ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+    } else if (this.type === "text") {
+      ctx.font = this.font + " " + this.fontFamily;
+      ctx.fillStyle = this.color;
+      ctx.fillText(this.text, this.x, this.y);
     } else {
       ctx.fillStyle = this.color;
       ctx.fillRect(this.x, this.y, this.width, this.height);
@@ -70,50 +98,70 @@ function component(width, height, colorOrImage, x, y, type) {
     this.x += this.speedX;
     this.y += this.speedY;
   };
+
+  this.crashWith = function(otherobj) {
+    const myleft = this.x;
+    const myright = this.x + this.width;
+    const mytop = this.y;
+    const mybottom = this.y + this.height;
+    const otherleft = otherobj.x;
+    const otherright = otherobj.x + otherobj.width;
+    const othertop = otherobj.y;
+    const otherbottom = otherobj.y + otherobj.height;
+    let crash = true;
+    if (mybottom < othertop || mytop > otherbottom || myright < otherleft || myleft > otherright) {
+      crash = false;
+    }
+    return crash;
+  };
 }
 
-// Met à jour le canvas
+// Mise à jour du jeu
 function updateGameArea() {
+  myGameArea.clear();
+  myGameArea.frameNo += 1;
+
   const ctx = myGameArea.context;
   ctx.drawImage(background, 0, 0, myGameArea.canvas.width, myGameArea.canvas.height);
+
   myGamePiece.newPos();
   myGamePiece.update();
-  myObstacle.update();
+
+  for (let i = 0; i < myObstacles.length; i++) {
+    myObstacles[i].x -= 2;
+    myObstacles[i].update();
+
+    if (myGamePiece.crashWith(myObstacles[i])) {
+      myGameArea.stop();
+      return;
+    }
+  }
+
+  myScore.text = "SCORE: " + myGameArea.frameNo;
+  myScore.update();
+
+  myObstacles.forEach(obs => {
+    if (obs.x + obs.width < 0) {
+      obs.x = 1000 + Math.random() * 400;
+    }
+  });
 }
 
-// Fonctions de mouvement
-function moveup() {
-  myGamePiece.speedY = -2;
-}
-
-function movedown() {
-  myGamePiece.speedY = 2;
-}
-
-function moveright() {
-  myGamePiece.speedX = 2;
-}
-
-function moveleft() {
-  myGamePiece.speedX = -2;
-}
-
-// Arrêter le mouvement
-function clearmove() {
-  myGamePiece.speedX = 0;
-  myGamePiece.speedY = 0;
-}
-
-
-
-
+// Mouvement
+function moveup() { myGamePiece.speedY = -3; }
+function movedown() { myGamePiece.speedY = 3; }
+function moveright() { myGamePiece.speedX = 3; }
+function moveleft() { myGamePiece.speedX = -3; }
+function clearmove() { myGamePiece.speedX = 0; myGamePiece.speedY = 0; }
 </script>
 
 <!-- Contrôles -->
-<button onmousedown="moveup()" onmouseup="clearmove()">UP</button>
-<button onmousedown="movedown()" onmouseup="clearmove()">DOWN</button>
-<button onmousedown="moveleft()" onmouseup="clearmove()">LEFT</button>
-<button onmousedown="moveright()" onmouseup="clearmove()">RIGHT</button>
+<div>
+  <button onmousedown="moveup()" onmouseup="clearmove()">⬆️ UP</button>
+  <button onmousedown="movedown()" onmouseup="clearmove()">⬇️ DOWN</button>
+  <button onmousedown="moveleft()" onmouseup="clearmove()">⬅️ LEFT</button>
+  <button onmousedown="moveright()" onmouseup="clearmove()">➡️ RIGHT</button>
+</div>
 
 </body>
 </html>
